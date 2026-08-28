@@ -14,8 +14,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "VHN",
-  description: "A walk through the gallery, one piece at a time.",
+  title: "élegos",
+  description: "Un recorrido por la galería, obra por obra.",
 };
 
 export default function RootLayout({

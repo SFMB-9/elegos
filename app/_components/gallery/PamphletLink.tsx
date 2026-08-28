@@ -8,7 +8,7 @@ export default function PamphletLink() {
     <Link
       href="/catalog"
       aria-label="Open the seasonal catalog"
-      className="group absolute bottom-20 left-6 flex flex-col items-center gap-1"
+      className="group absolute bottom-32 left-6 flex flex-col items-center gap-1 z-10"
     >
       <motion.svg
         viewBox="0 0 40 32"
@@ -26,7 +26,7 @@ export default function PamphletLink() {
         <path d="M20 6v20" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
       </motion.svg>
       <span className="font-serif italic text-[11px] text-ink-soft opacity-70 group-hover:opacity-100 transition-opacity">
-        catalog
+        catálogo
       </span>
     </Link>
   );

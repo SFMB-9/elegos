@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Frame body -->
+  <rect x="0"   y="0"   width="200" height="50"  fill="#3B1F0A"/>
+  <rect x="0"   y="150" width="200" height="50"  fill="#3B1F0A"/>
+  <rect x="0"   y="50"  width="50"  height="100" fill="#3B1F0A"/>
+  <rect x="150" y="50"  width="50"  height="100" fill="#3B1F0A"/>
+  <!-- Top bevel -->
+  <polygon points="0,0 200,0 150,50 50,50" fill="#5C3015"/>
+  <!-- Bottom bevel -->
+  <polygon points="0,200 200,200 150,150 50,150" fill="#1A0A03"/>
+  <!-- Left bevel -->
+  <polygon points="0,0 0,200 50,150 50,50" fill="#4A2810"/>
+  <!-- Right bevel -->
+  <polygon points="200,0 200,200 150,150 150,50" fill="#220E04"/>
+  <!-- Outer edge -->
+  <rect x="1" y="1" width="198" height="198" fill="none" stroke="#0D0502" stroke-width="1.5"/>
+  <!-- Inner edge highlight -->
+  <rect x="47" y="47" width="106" height="106" fill="none" stroke="#7A4820" stroke-width="1.5"/>
+  <!-- Inner edge shadow -->
+  <rect x="49" y="49" width="102" height="102" fill="none" stroke="#0D0502" stroke-width="1"/>
+</svg>

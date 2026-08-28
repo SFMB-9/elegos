@@ -4,29 +4,35 @@ import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { pieces } from "@/app/_data/gallery";
 import FramedPiece from "./FramedPiece";
-import Placard from "./Placard";
 import NavArrows from "./NavArrows";
-import VisitorFigure from "./VisitorFigure";
 import PamphletLink from "./PamphletLink";
+import PieceLabel from "./PieceLabel";
+import ElegosLogo from "@/app/_components/shared/ElegosLogo";
 
 const variants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? 60 : -60,
-    opacity: 0,
-    scale: 0.96,
+    x: direction > 0 ? "110vw" : "-110vw",
   }),
-  center: { x: 0, opacity: 1, scale: 1 },
+  center: { x: 0 },
   exit: (direction: number) => ({
-    x: direction > 0 ? -60 : 60,
-    opacity: 0,
-    scale: 0.96,
+    x: direction > 0 ? "-110vw" : "110vw",
   }),
 };
 
+// Floor height in px — keep in sync with the floor div's h-* class
+const FLOOR_H = 112; // h-28
+
 export default function GalleryRoom() {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem("galleryIndex");
+      const n = saved !== null ? parseInt(saved, 10) : 0;
+      return isFinite(n) && n >= 0 && n < pieces.length ? n : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [direction, setDirection] = useState(1);
-  const [steps, setSteps] = useState(0);
 
   const canPrev = index > 0;
   const canNext = index < pieces.length - 1;
@@ -34,13 +40,14 @@ export default function GalleryRoom() {
   const go = useCallback((delta: number) => {
     setIndex((i) => {
       const next = Math.min(Math.max(i + delta, 0), pieces.length - 1);
-      if (next !== i) {
-        setDirection(delta);
-        setSteps((s) => s + 1);
-      }
+      if (next !== i) setDirection(delta);
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("galleryIndex", String(index)); } catch { /* noop */ }
+  }, [index]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -54,63 +61,51 @@ export default function GalleryRoom() {
   const piece = pieces[index];
 
   return (
-    <div
-      className="relative flex-1 overflow-hidden bg-wall"
-      style={{ perspective: 1200 }}
-    >
-      <div
-        className="absolute inset-y-0 left-0 w-[18%] bg-wall-deep"
-        style={{ clipPath: "polygon(0 0, 100% 15%, 100% 85%, 0 100%)" }}
-      />
-      <div
-        className="absolute inset-y-0 right-0 w-[18%] bg-wall-deep"
-        style={{ clipPath: "polygon(100% 0, 0 15%, 0 85%, 100% 100%)" }}
-      />
-      <div
-        className="absolute bottom-0 inset-x-0 h-[32%] bg-floor"
-        style={{ clipPath: "polygon(0 100%, 100% 100%, 80% 0, 20% 0)" }}
-      />
-      <div
-        className="absolute bottom-0 inset-x-0 h-[32%]"
-        style={{
-          background: "linear-gradient(to top, var(--floor-deep), transparent)",
-          clipPath: "polygon(0 100%, 100% 100%, 80% 0, 20% 0)",
-        }}
-      />
+    <div className="relative flex-1 flex flex-col overflow-hidden bg-wall">
+      {/* Logo */}
+      <div className="absolute top-5 left-6 z-10">
+        <a href="/" aria-label="élegos">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <ElegosLogo className="w-36 opacity-70 hover:opacity-100 transition-opacity" />
+        </a>
+      </div>
 
-      <div className="absolute top-6 right-6 font-serif italic text-sm text-ink-soft">
+      {/* Counter */}
+      <div className="absolute top-6 right-6 font-serif italic text-sm text-ink-soft select-none z-10">
         {index + 1} / {pieces.length}
       </div>
 
-      <div className="relative h-full flex flex-col items-center justify-center gap-6 px-6">
-        <div
-          className="relative flex items-center justify-center"
-          style={{ minHeight: "min(50vh, 420px)" }}
-        >
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={piece.id}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.45, ease: "easeInOut" }}
-            >
-              <FramedPiece piece={piece} />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <Placard piece={piece} />
+      {/* Wall — centers painting with breathing room on all sides */}
+      <div className="flex-1 flex flex-col items-center justify-center py-10 px-6 overflow-hidden">
+        <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+          <motion.div
+            key={piece.id}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1] }}
+            className="flex flex-col items-center"
+          >
+            <FramedPiece piece={piece} />
+            <PieceLabel piece={piece} />
+          </motion.div>
+        </AnimatePresence>
       </div>
 
+      {/* Orthographic floor */}
+      <div className="h-28 flex-shrink-0 bg-floor border-t-2 border-floor-deep" />
+
+      {/* Nav arrows span the wall area only */}
       <NavArrows
         onPrev={() => go(-1)}
         onNext={() => go(1)}
         canPrev={canPrev}
         canNext={canNext}
+        offsetBottom={FLOOR_H}
       />
-      <VisitorFigure stepTrigger={steps} />
+
       <PamphletLink />
     </div>
   );
