@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
+import type OpenSeadragon from "openseadragon";
 interface OsdViewerProps {
   /** IIIF Image Service base URL (without /info.json) or plain image URL */
   src: string;
@@ -16,7 +16,7 @@ export default function OsdViewer({ src, className }: OsdViewerProps) {
     if (!containerRef.current) return;
     setReady(false);
 
-    let viewer: { destroy: () => void } | null = null;
+    let viewer: OpenSeadragon.Viewer | null = null;
 
     // Dynamic import keeps OpenSeadragon out of the SSR bundle
     import("openseadragon").then(({ default: OpenSeadragon }) => {
@@ -44,12 +44,21 @@ export default function OsdViewer({ src, className }: OsdViewerProps) {
         minZoomLevel: 0.5,
         maxZoomLevel: 20,
         visibilityRatio: 0.5,
-        background: "transparent",
       });
 
       viewer.addHandler("open", () => {
-        viewer?.viewport?.goHome(true);
-        setReady(true);
+        requestAnimationFrame(() => {
+          if (!viewer) return;
+
+          viewer.viewport.goHome(true);
+          viewer.viewport.applyConstraints();
+          viewer.forceRedraw();
+
+          requestAnimationFrame(() => {
+            viewer?.forceRedraw();
+            setReady(true);
+          });
+        });
       });
     });
 

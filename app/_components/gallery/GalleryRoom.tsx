@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { pieces } from "@/app/_data/gallery";
 import FramedPiece from "./FramedPiece";
@@ -8,6 +9,7 @@ import NavArrows from "./NavArrows";
 import PamphletLink from "./PamphletLink";
 import PieceLabel from "./PieceLabel";
 import ElegosLogo from "@/app/_components/shared/ElegosLogo";
+
 
 const variants = {
   enter: (direction: number) => ({
@@ -23,15 +25,7 @@ const variants = {
 const FLOOR_H = 112; // h-28
 
 export default function GalleryRoom() {
-  const [index, setIndex] = useState<number>(() => {
-    try {
-      const saved = sessionStorage.getItem("galleryIndex");
-      const n = saved !== null ? parseInt(saved, 10) : 0;
-      return isFinite(n) && n >= 0 && n < pieces.length ? n : 0;
-    } catch {
-      return 0;
-    }
-  });
+  const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
 
   const canPrev = index > 0;
@@ -46,7 +40,25 @@ export default function GalleryRoom() {
   }, []);
 
   useEffect(() => {
-    try { sessionStorage.setItem("galleryIndex", String(index)); } catch { /* noop */ }
+    try {
+      const saved = sessionStorage.getItem("galleryIndex");
+      const n = saved !== null ? parseInt(saved, 10) : 0;
+
+      if (isFinite(n) && n >= 0 && n < pieces.length) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIndex(n);
+      }
+    } catch {
+      // noop
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("galleryIndex", String(index));
+    } catch {
+      // noop
+    }
   }, [index]);
 
   useEffect(() => {
@@ -64,10 +76,10 @@ export default function GalleryRoom() {
     <div className="relative flex-1 flex flex-col overflow-hidden bg-wall">
       {/* Logo */}
       <div className="absolute top-5 left-6 z-10">
-        <a href="/" aria-label="élegos">
+        <Link href="/" aria-label="élegos">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <ElegosLogo className="w-36 opacity-70 hover:opacity-100 transition-opacity" />
-        </a>
+        </Link>
       </div>
 
       {/* Counter */}
