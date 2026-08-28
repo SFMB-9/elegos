@@ -10,7 +10,6 @@ import PamphletLink from "./PamphletLink";
 import PieceLabel from "./PieceLabel";
 import ElegosLogo from "@/app/_components/shared/ElegosLogo";
 
-
 const variants = {
   enter: (direction: number) => ({
     x: direction > 0 ? "110vw" : "-110vw",
@@ -21,53 +20,112 @@ const variants = {
   }),
 };
 
-// Floor height in px — keep in sync with the floor div's h-* class
-const FLOOR_H = 112; // h-28
+const FLOOR_H = 112;
+const STORAGE_KEY = "galleryIndex";
+
+const listeners = new Set<() => void>();
+
+function getGalleryIndex(): number {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+
+    if (saved === null) {
+      return 0;
+    }
+
+    const n = Number.parseInt(saved, 10);
+
+    if (Number.isFinite(n) && n >= 0 && n < pieces.length) {
+      return n;
+    }
+
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+function getServerGalleryIndex(): number {
+  return 0;
+}
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.storageArea === sessionStorage && event.key === STORAGE_KEY) {
+      callback();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    listeners.delete(callback);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
+function setGalleryIndex(index: number) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, String(index));
+  } catch {
+    // noop
+  }
+
+  // sessionStorage does not emit "storage" in the same tab,
+  // so notify our own subscribers.
+  listeners.forEach((listener) => listener());
+}
 
 export default function GalleryRoom() {
-  const [index, setIndex] = useState(0);
+  const index = useSyncExternalStore(
+    subscribe,
+    getGalleryIndex,
+    getServerGalleryIndex
+  );
+
   const [direction, setDirection] = useState(1);
 
   const canPrev = index > 0;
   const canNext = index < pieces.length - 1;
 
   const go = useCallback((delta: number) => {
-    setIndex((i) => {
-      const next = Math.min(Math.max(i + delta, 0), pieces.length - 1);
-      if (next !== i) setDirection(delta);
-      return next;
-    });
-  }, []);
+    const current = getGalleryIndex();
 
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("galleryIndex");
-      const n = saved !== null ? parseInt(saved, 10) : 0;
+    const next = Math.min(
+      Math.max(current + delta, 0),
+      pieces.length - 1
+    );
 
-      if (isFinite(n) && n >= 0 && n < pieces.length) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIndex(n);
-      }
-    } catch {
-      // noop
+    if (next === current) {
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    try {
-      sessionStorage.setItem("galleryIndex", String(index));
-    } catch {
-      // noop
-    }
-  }, [index]);
+    setDirection(delta);
+    setGalleryIndex(next);
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
+      if (e.key === "ArrowRight") {
+        go(1);
+      }
+
+      if (e.key === "ArrowLeft") {
+        go(-1);
+      }
     }
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
   }, [go]);
 
   const piece = pieces[index];
@@ -77,7 +135,6 @@ export default function GalleryRoom() {
       {/* Logo */}
       <div className="absolute top-5 left-6 z-10">
         <Link href="/" aria-label="élegos">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <ElegosLogo className="w-36 opacity-70 hover:opacity-100 transition-opacity" />
         </Link>
       </div>
@@ -87,9 +144,13 @@ export default function GalleryRoom() {
         {index + 1} / {pieces.length}
       </div>
 
-      {/* Wall — centers painting with breathing room on all sides */}
+      {/* Wall */}
       <div className="flex-1 flex flex-col items-center justify-center py-10 px-6 overflow-hidden">
-        <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+        <AnimatePresence
+          mode="popLayout"
+          custom={direction}
+          initial={false}
+        >
           <motion.div
             key={piece.id}
             custom={direction}
@@ -97,7 +158,10 @@ export default function GalleryRoom() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 1.1, ease: [0.4, 0, 0.2, 1] }}
+            transition={{
+              duration: 1.1,
+              ease: [0.4, 0, 0.2, 1],
+            }}
             className="flex flex-col items-center"
           >
             <FramedPiece piece={piece} />
@@ -109,7 +173,7 @@ export default function GalleryRoom() {
       {/* Orthographic floor */}
       <div className="h-28 flex-shrink-0 bg-floor border-t-2 border-floor-deep" />
 
-      {/* Nav arrows span the wall area only */}
+      {/* Navigation */}
       <NavArrows
         onPrev={() => go(-1)}
         onNext={() => go(1)}
