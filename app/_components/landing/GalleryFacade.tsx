@@ -91,7 +91,7 @@ export default function GalleryFacade() {
           </svg>
         </button>
         <span className="font-serif italic text-sm text-ink-soft tracking-wide opacity-70">
-          enter
+          entrar
         </span>
       </div>
     </>

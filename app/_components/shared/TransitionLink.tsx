@@ -3,25 +3,35 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import type { CSSProperties, ReactNode } from "react";
+import type {
+  AnchorHTMLAttributes,
+  MouseEvent,
+} from "react";
 
-interface Props {
+interface Props extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
-  children: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-  "aria-label"?: string;
 }
 
-export default function TransitionLink({ href, children, className, style, "aria-label": ariaLabel }: Props) {
+export default function TransitionLink({
+  href,
+  children,
+  className,
+  style,
+  ...props
+}: Props) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
 
-  function handleClick(e: React.MouseEvent) {
+  function handleClick(e: MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
+
     if (leaving) return;
+
     setLeaving(true);
-    setTimeout(() => router.push(href), 280);
+
+    setTimeout(() => {
+      router.push(href);
+    }, 280);
   }
 
   return (
@@ -34,7 +44,14 @@ export default function TransitionLink({ href, children, className, style, "aria
           transition={{ duration: 0.22 }}
         />
       )}
-      <a href={href} onClick={handleClick} className={className} style={style} aria-label={ariaLabel}>
+
+      <a
+        href={href}
+        onClick={handleClick}
+        className={className}
+        style={style}
+        {...props}
+      >
         {children}
       </a>
     </>
